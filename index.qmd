@@ -1,0 +1,186 @@
+---
+title: Tarea 2
+format: html
+toc: true
+toc_float: true
+lang: es
+---
+```{r}
+#| echo: false
+options(repos = c(CRAN = "https://cran.r-project.org"))
+
+```
+
+
+![UCR-logo](UCR-logo.png){width="325"}\
+Maestría en Gestión Integrada del Recurso Hídrico\
+Programación en R PF-0953
+
+# Herramientas para la creación de gráficos e información en páginas web
+
+Desarrollo de un sitio web con visualizaciones a partir de los conjuntos de datos de `R`, **trees** e **infert** programado con los paquetes de Tidyverse y plotly, a través de Quarto.
+
+## 1. Carga de datos
+
+Deben de cargarse inicialmente los paquetes y librerías que se utilizaran para el desarrollo de la página web. A continuación se muestra la instalación del paquete `tidyverse`que contiene los paquetes dplyr, ggplot2, readr, entre otros.
+
+```{r}
+#| label: instalacion
+#| include: true
+#| echo: true
+#| message: false
+#| warning: false
+
+#Instalacion de paquetes
+install.packages("tidyverse")
+install.packages("trees")
+install.packages("infert")
+install.packages("plotly")
+install.packages("DT")
+install.packages("dplyr")
+install.packages("ggthemes")
+```
+
+Luego se cargan las librerías respectivas para el procesamiento y visualización de los datos.
+
+```{r}
+#| label: librerias
+#| include: true
+#| echo: true
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(plotly)
+library(DT)
+library(scales)
+library(dplyr)
+library(ggthemes)
+```
+
+
+
+## 2. Gráficos
+
+A continuacion se muestran los graficos generados a partir de los paquetes de datos infert y trees.
+
+### 2.1 Gráficos de dispesión
+
+Los gráficos de dispersión son una herramienta visual utilizada para mostrar la realacion entre dos variables cuantitativas, estas muestran como una se comporta en realción con otra. Cada punto representa un par de valores. Además permiten detectar valores atípicos y la distribución de los datos. Para generar el gráfico de dispersión se utiliza los conjuntos de datos `trees`, cual se presenta a continuación.
+
+```{r}
+#| label: Dispersion
+#| include: true
+#| echo: true
+#| message: false
+#| warning: false
+
+trees |>
+ggplot(aes( x = trees$Height, y = trees$Girth, color = Volume)) +
+  geom_point() +
+  scale_x_continuous(labels = comma, limits = c(60,NA)) +
+  scale_y_continuous(labels = comma, limits = c(5,25)) +
+  ggtitle("Figura 1. Relación diámetro altura de los árboles") +
+  xlab("Altura (pies)") +
+  ylab("Diametro (pulgadas)") +
+  labs(caption = "Fuente: Elaboración propia (Conjunto de datos trees)")
+  theme_light()
+  
+```
+En la Figura 1 se muestra el gráfico de dispersión de la tendencia entre el diámetro y a la altura de los árboles. Se muestra una tendencia ascendente, significa que a medida que el diámetro aumenta, el volumen también tiende a aumentar.
+
+
+### 2.2 Gráficos de barras
+Los gráficos de barras muestran los valores entre diferentes categorias, pueden ser utilizados para datos categóricos y numericos. Para crear el gráfico de barras se utiliza los conjuntos de datos `infert`, los cuales se muestran a continuación.
+
+```{r}
+#| label: barras
+#| include: true
+#| echo: true
+#| message: false
+#| warning: false
+
+grafico_barras <-
+  infert |>
+  ggplot(aes(x = parity, fill = education)) +
+  geom_bar() +
+  ggtitle("Figura 2. Cantidad de partos y nivel de educación") +
+  xlab("Número de partos") +
+  ylab("Cantidad de mujeres") +
+  labs(fill = "Edad", caption = "Fuente: Elaboración propia (Datos infert)") +
+  theme_minimal()
+
+ggplotly(grafico_barras) |>
+  config(locale = 'es')
+
+```
+
+
+En la Figura 2 se muestra el gráfico de barras de cantidad de partos y nivel de educación basado en la información sobre la infertilidad después de un aborto espontáneo e inducido en mujeres del set de datos `infert`. Se observa que hay una mayor infertilidad después del primer parto y principalmente en mujeres con un nivel educativo mayor de 12 años.
+
+### 2.3 Gráficos de pastel
+Los graficos de pastel comparan valores entre diferentes categorias, muestra la porción relativa de las diferentes categorias dentro de un conjuntos de datos. Se genera el gráfico de pastel a patir de los datos de `infert`, el cual se observa a continuación.
+
+```{r}
+#| label: pastel
+#| include: true
+#| echo: true
+#| message: false
+#| warning: false
+
+nivel_educacion <- infert |>
+  group_by(education) |>
+  summarise(count = n()) |>
+  mutate(percentage = count / sum(count) * 100, 1)
+
+grafico_pastel <-
+  ggplot(nivel_educacion, aes(x = "", y = percentage, fill = education )) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar(theta = "y") +
+  geom_text(
+    aes(label = paste0(percentage, "%")),
+    position = position_stack(vjust = 0.6)
+  ) +
+  labs(title = "Figura 3. Distribución de nivel de educación de datos de infertilidad después de abortos",
+       x = NULL,
+       y = NULL,
+       fill = "Nivel de educación") +
+  theme_void() +
+  scale_y_continuous(labels = percent_format(accuracy = 0.1))
+
+grafico_pastel
+```
+
+En la Figura 3 se muestra el la distribución del nivel de educación segun el número de mujeres infertiles despues de abortos expontaneos o inducidos. Cada sector del pastel representa una categoría de educación, y el tamaño de cada sector es proporcional a la frecuencia de esa categoría.
+
+### 2.4 Histograma
+Los Histogramas visualizan  la distribución de una variable continua y ayudan a identificar patrones de distribución. Para graficar el histograma se utilizaron los datos de `trees`, que se muestran a continuacion.
+
+```{r}
+#| label: histograma
+#| include: true
+#| echo: true
+#| message: false
+#| warning: false
+
+histograma <- ggplot(trees, aes(x = Girth)) +
+  geom_histogram(binwidth = 1, fill = "blue", color = "black") +
+  ggtitle("Figura 4. Histograma de la Circunferencia de los Árboles") + 
+  xlab("Circunferencia (pulgadas)") + 
+  ylab("Frecuencia") +
+  labs(caption = "Elaboración propia (Datos trees)")
+  theme_minimal()
+
+print(histograma)
+```
+
+
+En la Figura 4 se representa la frecuencia del diámetro de los árboles de cerezo, la mayoría de los árboles en el conjunto de datos tienen un diámetro cercano a 11 pulgadas. Si hay barras aisladas a la derecha, podría indicar la presencia de algunos árboles excepcionalmente grandes. La distribución de los datos del diametro de los arboles corresponde.
+
+
+## Conclusiones
+
+El uso de [Quarto](https://quarto.org/) y sus herramientas contribuyen a la creación de documentos para la visualización de datos de acceso libre y de fácil comprensión. Pueden personlizarse y a la vez ser interactivos.
+
+
+Elaborado por: Susana Briceño Guevara 990668
